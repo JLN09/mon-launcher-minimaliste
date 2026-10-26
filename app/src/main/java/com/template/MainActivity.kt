@@ -1,38 +1,83 @@
 package com.template
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
-import com.template.ui.theme.TemplateTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            TemplateTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(color = MaterialTheme.colors.background) {
-                    Greeting("Sample Template")
-                }
-            }
-        }
-    }
-}
+            super.onCreate(savedInstanceState)
+                    
+                            // Récupère la liste des applications installées
+                                    val installedApps = getApps()
 
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
-}
+                                            setContent {
+                                                        MinimalistLauncherScreen(apps = installedApps) { packageName ->
+                                                                        launchApp(packageName)
+                                                                                    }
+                                                                                            }
+                                                                                                }
 
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    TemplateTheme {
-        Greeting("Android")
-    }
-}
+                                                                                                    // Fonction qui interroge le système pour lister toutes les apps lançables
+                                                                                                        private fun getApps(): List<AppInfo> {
+                                                                                                                val intent = Intent(Intent.ACTION_MAIN, null)
+                                                                                                                        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+                                                                                                                                val apps = packageManager.queryIntentActivities(intent, 0)
+                                                                                                                                        
+                                                                                                                                                return apps.map { resolveInfo ->
+                                                                                                                                                            AppInfo(
+                                                                                                                                                                            name = resolveInfo.loadLabel(packageManager).toString(),
+                                                                                                                                                                                            packageName = resolveInfo.activityInfo.packageName
+                                                                                                                                                                                                        )
+                                                                                                                                                                                                                }.sortedBy { it.name.lowercase() } // Trie par ordre alphabétique
+                                                                                                                                                                                                                    }
+
+                                                                                                                                                                                                                        // Fonction pour ouvrir une application
+                                                                                                                                                                                                                            private fun launchApp(packageName: String) {
+                                                                                                                                                                                                                                    val intent = packageManager.getLaunchIntentForPackage(packageName)
+                                                                                                                                                                                                                                            if (intent != null) {
+                                                                                                                                                                                                                                                        startActivity(intent)
+                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                    }
+
+                                                                                                                                                                                                                                                                    // L'interface visuelle (Jetpack Compose)
+                                                                                                                                                                                                                                                                    @Composable
+                                                                                                                                                                                                                                                                    fun MinimalistLauncherScreen(apps: List<AppInfo>, onAppClick: (String) -> Unit) {
+                                                                                                                                                                                                                                                                        Box(
+                                                                                                                                                                                                                                                                                modifier = Modifier
+                                                                                                                                                                                                                                                                                            .fillMaxSize()
+                                                                                                                                                                                                                                                                                                        .background(Color.Black) // Fond totalement noir pour l'écran OLED
+                                                                                                                                                                                                                                                                                                                    .padding(top = 48.dp, start = 24.dp, end = 24.dp)
+                                                                                                                                                                                                                                                                                                                        ) {
+                                                                                                                                                                                                                                                                                                                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                                                                                                                                                                                                                                                                                                                            items(apps) { app ->
+                                                                                                                                                                                                                                                                                                                                                            Text(
+                                                                                                                                                                                                                                                                                                                                                                                text = app.name,
+                                                                                                                                                                                                                                                                                                                                                                                                    color = Color.White,
+                                                                                                                                                                                                                                                                                                                                                                                                                        fontSize = 22.sp,
+                                                                                                                                                                                                                                                                                                                                                                                                                                            modifier = Modifier
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                    .fillMaxWidth()
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            .clickable { onAppClick(app.packageName) }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    .padding(vertical = 14.dp)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            // Structure de données pour stocker le nom et l'identifiant d'une app
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            data class AppInfo(val name: String, val packageName: String)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
